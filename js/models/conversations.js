@@ -172,13 +172,15 @@
             });
 
             var sendFunc;
+            var members;
             if (this.get('type') == 'private') {
                 sendFunc = textsecure.messaging.sendMessageToNumber;
             }
             else {
                 sendFunc = textsecure.messaging.sendMessageToGroup;
+                members = this.get('members');
             }
-            message.send(sendFunc(this.get('id'), body, attachments, now, this.get('expireTimer')));
+            message.send(sendFunc(this.get('id'), body, attachments, now, this.get('expireTimer'), members));
         }.bind(this));
     },
 
@@ -222,13 +224,15 @@
         message.save();
         if (message.isOutgoing()) { // outgoing update, send it to the number/group
             var sendFunc;
+            var members;
             if (this.get('type') == 'private') {
                 sendFunc = textsecure.messaging.sendExpirationTimerUpdateToNumber;
             }
             else {
                 sendFunc = textsecure.messaging.sendExpirationTimerUpdateToGroup;
+                members = this.get('members');
             }
-            message.send(sendFunc(this.get('id'), this.get('expireTimer'), message.get('sent_at')));
+            message.send(sendFunc(this.get('id'), this.get('expireTimer'), message.get('sent_at'), members));
         }
         return message;
     },

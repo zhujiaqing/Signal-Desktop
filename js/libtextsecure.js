@@ -39259,30 +39259,28 @@ MessageSender.prototype = {
         }.bind(this));
     },
 
-    sendMessageToGroup: function(groupId, messageText, attachments, timestamp, expireTimer) {
-        return textsecure.storage.groups.getNumbers(groupId).then(function(numbers) {
-            if (numbers === undefined)
-                return Promise.reject(new Error("Unknown Group"));
+    sendMessageToGroup: function(groupId, messageText, attachments, timestamp, expireTimer, numbers) {
+        if (!Array.isArray(numbers))
+            return Promise.reject(new Error("Expected an array of numbers"));
 
-            var me = textsecure.storage.user.getNumber();
-            numbers = numbers.filter(function(number) { return number != me; });
-            if (numbers.length === 0) {
-                return Promise.reject(new Error('No other members in the group'));
+        var me = textsecure.storage.user.getNumber();
+        numbers = numbers.filter(function(number) { return number != me; });
+        if (numbers.length === 0) {
+            return Promise.reject(new Error('No other members in the group'));
+        }
+
+        return this.sendMessage({
+            recipients  : numbers,
+            body        : messageText,
+            timestamp   : timestamp,
+            attachments : attachments,
+            needsSync   : true,
+            expireTimer : expireTimer,
+            group: {
+                id: groupId,
+                type: textsecure.protobuf.GroupContext.Type.DELIVER
             }
-
-            return this.sendMessage({
-                recipients  : numbers,
-                body        : messageText,
-                timestamp   : timestamp,
-                attachments : attachments,
-                needsSync   : true,
-                expireTimer : expireTimer,
-                group: {
-                    id: groupId,
-                    type: textsecure.protobuf.GroupContext.Type.DELIVER
-                }
-            });
-        }.bind(this));
+        });
     },
 
     createGroup: function(numbers, name, avatar) {
@@ -39392,28 +39390,26 @@ MessageSender.prototype = {
             }.bind(this));
         });
     },
-    sendExpirationTimerUpdateToGroup: function(groupId, expireTimer, timestamp) {
-        return textsecure.storage.groups.getNumbers(groupId).then(function(numbers) {
-            if (numbers === undefined)
-                return Promise.reject(new Error("Unknown Group"));
+    sendExpirationTimerUpdateToGroup: function(groupId, expireTimer, timestamp, numbers) {
+        if (numbers === undefined)
+            return Promise.reject(new Error("Unknown Group"));
 
-            var me = textsecure.storage.user.getNumber();
-            numbers = numbers.filter(function(number) { return number != me; });
-            if (numbers.length === 0) {
-                return Promise.reject(new Error('No other members in the group'));
+        var me = textsecure.storage.user.getNumber();
+        numbers = numbers.filter(function(number) { return number != me; });
+        if (numbers.length === 0) {
+            return Promise.reject(new Error('No other members in the group'));
+        }
+        return this.sendMessage({
+            recipients  : numbers,
+            timestamp   : timestamp,
+            needsSync   : true,
+            expireTimer : expireTimer,
+            flags       : textsecure.protobuf.DataMessage.Flags.EXPIRATION_TIMER_UPDATE,
+            group: {
+                id: groupId,
+                type: textsecure.protobuf.GroupContext.Type.DELIVER
             }
-            return this.sendMessage({
-                recipients  : numbers,
-                timestamp   : timestamp,
-                needsSync   : true,
-                expireTimer : expireTimer,
-                flags       : textsecure.protobuf.DataMessage.Flags.EXPIRATION_TIMER_UPDATE,
-                group: {
-                    id: groupId,
-                    type: textsecure.protobuf.GroupContext.Type.DELIVER
-                }
-            });
-        }.bind(this));
+        });
     },
     sendExpirationTimerUpdateToNumber: function(number, expireTimer, timestamp) {
         var proto = new textsecure.protobuf.DataMessage();
