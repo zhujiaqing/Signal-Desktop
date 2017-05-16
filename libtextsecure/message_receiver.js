@@ -432,19 +432,8 @@ MessageReceiver.prototype.extend({
 
             promises.push(textsecure.storage.groups.getNumbers(decrypted.group.id).then(function(existingGroup) {
                 if (existingGroup === undefined) {
-                    if (decrypted.group.type != textsecure.protobuf.GroupContext.Type.UPDATE) {
-                        decrypted.group.members = [source];
-                        console.log("Got message for unknown group");
-                    }
                     return textsecure.storage.groups.createNewGroup(decrypted.group.members, decrypted.group.id);
                 } else {
-                    var fromIndex = existingGroup.indexOf(source);
-
-                    if (fromIndex < 0) {
-                        //TODO: This could be indication of a race...
-                        console.log("Sender was not a member of the group they were sending from");
-                    }
-
                     switch(decrypted.group.type) {
                     case textsecure.protobuf.GroupContext.Type.UPDATE:
                         decrypted.body = null;

@@ -345,6 +345,13 @@
                         var now = new Date().getTime();
                         var attributes = { type: 'private' };
                         if (dataMessage.group) {
+                            var members = conversation.get('members') || [];
+                            if (!members.length && decrypted.group.type != textsecure.protobuf.GroupContext.Type.UPDATE ) {
+                                dataMessage.group.members = [source];
+                                console.log("Got message for unknown group");
+                            } else if (members.indexOf(source) < 0) {
+                                console.log("Sender was not a member of the group they were sending from");
+                            }
                             var group_update = null;
                             attributes = {
                                 type: 'group',
