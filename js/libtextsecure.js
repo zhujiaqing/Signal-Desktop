@@ -38458,13 +38458,10 @@ MessageReceiver.prototype.extend({
         var attachmentPointer = contacts.blob;
         return this.handleAttachment(attachmentPointer).then(function() {
             var contactBuffer = new ContactBuffer(attachmentPointer.data);
-            var contactDetails = contactBuffer.next();
-            while (contactDetails !== undefined) {
-                var ev = new Event('contact');
-                ev.contactDetails = contactDetails;
-                eventTarget.dispatchEvent(ev);
-                contactDetails = contactBuffer.next();
-            }
+            var ev = new Event('contacts');
+            ev.contacts = contactBuffer;
+            ev.complete = contacts.isComplete;
+            eventTarget.dispatchEvent(ev);
             eventTarget.dispatchEvent(new Event('contactsync'));
         });
     },
@@ -39227,14 +39224,15 @@ MessageSender.prototype = {
         }.bind(this));
     },
 
-    sendMessageToNumber: function(number, messageText, attachments, timestamp, expireTimer) {
+    sendMessageToNumber: function(number, messageText, attachments, timestamp, expireTimer, flags) {
         return this.sendMessage({
             recipients  : [number],
             body        : messageText,
             timestamp   : timestamp,
             attachments : attachments,
             needsSync   : true,
-            expireTimer : expireTimer
+            expireTimer : expireTimer,
+            flags       : flags
         });
     },
 
@@ -39259,7 +39257,7 @@ MessageSender.prototype = {
         }.bind(this));
     },
 
-    sendMessageToGroup: function(groupId, messageText, attachments, timestamp, expireTimer) {
+    sendMessageToGroup: function(groupId, messageText, attachments, timestamp, expireTimer, flags) {
         return textsecure.storage.groups.getNumbers(groupId).then(function(numbers) {
             if (numbers === undefined)
                 return Promise.reject(new Error("Unknown Group"));
@@ -39277,6 +39275,7 @@ MessageSender.prototype = {
                 attachments : attachments,
                 needsSync   : true,
                 expireTimer : expireTimer,
+                flags       : flags,
                 group: {
                     id: groupId,
                     type: textsecure.protobuf.GroupContext.Type.DELIVER

@@ -283,13 +283,10 @@ MessageReceiver.prototype.extend({
         var attachmentPointer = contacts.blob;
         return this.handleAttachment(attachmentPointer).then(function() {
             var contactBuffer = new ContactBuffer(attachmentPointer.data);
-            var contactDetails = contactBuffer.next();
-            while (contactDetails !== undefined) {
-                var ev = new Event('contact');
-                ev.contactDetails = contactDetails;
-                eventTarget.dispatchEvent(ev);
-                contactDetails = contactBuffer.next();
-            }
+            var ev = new Event('contacts');
+            ev.contacts = contactBuffer;
+            ev.complete = contacts.isComplete;
+            eventTarget.dispatchEvent(ev);
             eventTarget.dispatchEvent(new Event('contactsync'));
         });
     },

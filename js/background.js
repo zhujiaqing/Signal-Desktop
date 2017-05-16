@@ -141,23 +141,29 @@
     }
 
     function onContactReceived(ev) {
-        var contactDetails = ev.contactDetails;
-
-        var c = new Whisper.Conversation({
-            name: contactDetails.name,
-            id: contactDetails.number,
-            avatar: contactDetails.avatar,
-            color: contactDetails.color,
-            type: 'private',
-            active_at: Date.now()
-        });
-        var error;
-        if ((error = c.validateNumber())) {
-          console.log(error);
-          return;
+        if (ev.isComplete) {
+          // Delete any contacts that are not included.
         }
+        var contactBuffer = ev.contacts;
+        var contactDetails = contactBuffer.next();
+        while (contactDetails !== undefined) {
+            var c = new Whisper.Conversation({
+                name: contactDetails.name,
+                id: contactDetails.number,
+                avatar: contactDetails.avatar,
+                color: contactDetails.color,
+                type: 'private',
+                active_at: Date.now()
+            });
+            var error;
+            if ((error = c.validateNumber())) {
+              console.log(error);
+            } else {
+              c = ConversationController.create(c).save();
+            }
 
-        ConversationController.create(c).save();
+            contactDetails = contactBuffer.next();
+        }
     }
 
     function onGroupReceived(ev) {

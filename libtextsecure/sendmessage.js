@@ -321,14 +321,15 @@ MessageSender.prototype = {
         }.bind(this));
     },
 
-    sendMessageToNumber: function(number, messageText, attachments, timestamp, expireTimer) {
+    sendMessageToNumber: function(number, messageText, attachments, timestamp, expireTimer, flags) {
         return this.sendMessage({
             recipients  : [number],
             body        : messageText,
             timestamp   : timestamp,
             attachments : attachments,
             needsSync   : true,
-            expireTimer : expireTimer
+            expireTimer : expireTimer,
+            flags       : flags
         });
     },
 
@@ -353,7 +354,7 @@ MessageSender.prototype = {
         }.bind(this));
     },
 
-    sendMessageToGroup: function(groupId, messageText, attachments, timestamp, expireTimer) {
+    sendMessageToGroup: function(groupId, messageText, attachments, timestamp, expireTimer, flags) {
         return textsecure.storage.groups.getNumbers(groupId).then(function(numbers) {
             if (numbers === undefined)
                 return Promise.reject(new Error("Unknown Group"));
@@ -371,6 +372,7 @@ MessageSender.prototype = {
                 attachments : attachments,
                 needsSync   : true,
                 expireTimer : expireTimer,
+                flags       : flags,
                 group: {
                     id: groupId,
                     type: textsecure.protobuf.GroupContext.Type.DELIVER
