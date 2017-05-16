@@ -291,7 +291,8 @@
                 sent_at        : now,
                 received_at    : now
             });
-            message.send(textsecure.messaging.leaveGroup(this.id));
+            var members = this.get('members');
+            message.send(textsecure.messaging.leaveGroup(this.id, members));
         }
     },
 

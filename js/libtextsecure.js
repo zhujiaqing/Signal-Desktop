@@ -39272,24 +39272,22 @@ MessageSender.prototype = {
         });
     },
 
-    createGroup: function(numbers, name, avatar) {
+    createGroup: function(id, numbers, name, avatar) {
         var proto = new textsecure.protobuf.DataMessage();
         proto.group = new textsecure.protobuf.GroupContext();
 
-        return textsecure.storage.groups.createNewGroup(numbers).then(function(group) {
-            proto.group.id = stringToArrayBuffer(group.id);
-            var numbers = group.numbers;
+        proto.group.id = stringToArrayBuffer(id);
+        var numbers = group.numbers;
 
-            proto.group.type = textsecure.protobuf.GroupContext.Type.UPDATE;
-            proto.group.members = numbers;
-            proto.group.name = name;
+        proto.group.type = textsecure.protobuf.GroupContext.Type.UPDATE;
+        proto.group.members = numbers;
+        proto.group.name = name;
 
-            return this.makeAttachmentPointer(avatar).then(function(attachment) {
-                proto.group.avatar = attachment;
-                return this.sendGroupProto(numbers, proto).then(function() {
-                    return proto.group.id;
-                });
-            }.bind(this));
+        return this.makeAttachmentPointer(avatar).then(function(attachment) {
+            proto.group.avatar = attachment;
+            return this.sendGroupProto(numbers, proto).then(function() {
+                return proto.group.id;
+            });
         }.bind(this));
     },
 
@@ -39301,83 +39299,30 @@ MessageSender.prototype = {
         proto.group.type = textsecure.protobuf.GroupContext.Type.UPDATE;
         proto.group.name = name;
 
-        return textsecure.storage.groups.addNumbers(groupId, numbers).then(function(numbers) {
-            if (numbers === undefined) {
-                return Promise.reject(new Error("Unknown Group"));
-            }
-            proto.group.members = numbers;
+        if (numbers === undefined) {
+            return Promise.reject(new Error("Unknown Group"));
+        }
+        proto.group.members = numbers;
 
-            return this.makeAttachmentPointer(avatar).then(function(attachment) {
-                proto.group.avatar = attachment;
-                return this.sendGroupProto(numbers, proto).then(function() {
-                    return proto.group.id;
-                });
-            }.bind(this));
+        return this.makeAttachmentPointer(avatar).then(function(attachment) {
+            proto.group.avatar = attachment;
+            return this.sendGroupProto(numbers, proto).then(function() {
+                return proto.group.id;
+            });
         }.bind(this));
     },
 
-    addNumberToGroup: function(groupId, number) {
-        var proto = new textsecure.protobuf.DataMessage();
-        proto.group = new textsecure.protobuf.GroupContext();
-        proto.group.id = stringToArrayBuffer(groupId);
-        proto.group.type = textsecure.protobuf.GroupContext.Type.UPDATE;
-
-        return textsecure.storage.groups.addNumbers(groupId, [number]).then(function(numbers) {
-            if (numbers === undefined)
-                return Promise.reject(new Error("Unknown Group"));
-            proto.group.members = numbers;
-
-            return this.sendGroupProto(numbers, proto);
-        }.bind(this));
-    },
-
-    setGroupName: function(groupId, name) {
-        var proto = new textsecure.protobuf.DataMessage();
-        proto.group = new textsecure.protobuf.GroupContext();
-        proto.group.id = stringToArrayBuffer(groupId);
-        proto.group.type = textsecure.protobuf.GroupContext.Type.UPDATE;
-        proto.group.name = name;
-
-        return textsecure.storage.groups.getNumbers(groupId).then(function(numbers) {
-            if (numbers === undefined)
-                return Promise.reject(new Error("Unknown Group"));
-            proto.group.members = numbers;
-
-            return this.sendGroupProto(numbers, proto);
-        }.bind(this));
-    },
-
-    setGroupAvatar: function(groupId, avatar) {
-        var proto = new textsecure.protobuf.DataMessage();
-        proto.group = new textsecure.protobuf.GroupContext();
-        proto.group.id = stringToArrayBuffer(groupId);
-        proto.group.type = textsecure.protobuf.GroupContext.Type.UPDATE;
-
-        return textsecure.storage.groups.getNumbers(groupId).then(function(numbers) {
-            if (numbers === undefined)
-                return Promise.reject(new Error("Unknown Group"));
-            proto.group.members = numbers;
-
-            return this.makeAttachmentPointer(avatar).then(function(attachment) {
-                proto.group.avatar = attachment;
-                return this.sendGroupProto(numbers, proto);
-            }.bind(this));
-        }.bind(this));
-    },
-
-    leaveGroup: function(groupId) {
+    leaveGroup: function(groupId, numbers) {
         var proto = new textsecure.protobuf.DataMessage();
         proto.group = new textsecure.protobuf.GroupContext();
         proto.group.id = stringToArrayBuffer(groupId);
         proto.group.type = textsecure.protobuf.GroupContext.Type.QUIT;
 
-        return textsecure.storage.groups.getNumbers(groupId).then(function(numbers) {
-            if (numbers === undefined)
-                return Promise.reject(new Error("Unknown Group"));
-            return textsecure.storage.groups.deleteGroup(groupId).then(function() {
-                return this.sendGroupProto(numbers, proto);
-            }.bind(this));
-        });
+        if (numbers === undefined)
+            return Promise.reject(new Error("Unknown Group"));
+        return textsecure.storage.groups.deleteGroup(groupId).then(function() {
+            return this.sendGroupProto(numbers, proto);
+        }.bind(this));
     },
     sendExpirationTimerUpdateToGroup: function(groupId, expireTimer, timestamp, numbers) {
         if (numbers === undefined)
@@ -39430,9 +39375,6 @@ textsecure.MessageSender = function(url, ports, username, password) {
     this.sendMessageToGroup                = sender.sendMessageToGroup               .bind(sender);
     this.createGroup                       = sender.createGroup                      .bind(sender);
     this.updateGroup                       = sender.updateGroup                      .bind(sender);
-    this.addNumberToGroup                  = sender.addNumberToGroup                 .bind(sender);
-    this.setGroupName                      = sender.setGroupName                     .bind(sender);
-    this.setGroupAvatar                    = sender.setGroupAvatar                   .bind(sender);
     this.leaveGroup                        = sender.leaveGroup                       .bind(sender);
     this.sendSyncMessage                   = sender.sendSyncMessage                  .bind(sender);
     this.syncReadMessages                  = sender.syncReadMessages                 .bind(sender);
