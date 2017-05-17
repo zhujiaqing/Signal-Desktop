@@ -302,37 +302,12 @@ MessageReceiver.prototype.extend({
             var groupDetails = groupBuffer.next();
             var promises = [];
             while (groupDetails !== undefined) {
-                var promise = (function(groupDetails) {
-                    groupDetails.id = groupDetails.id.toBinary();
-                    if (groupDetails.active) {
-                        return textsecure.storage.groups.getGroup(groupDetails.id).
-                            then(function(existingGroup) {
-                                if (existingGroup === undefined) {
-                                    return textsecure.storage.groups.createNewGroup(
-                                        groupDetails.members, groupDetails.id
-                                    );
-                                } else {
-                                    return textsecure.storage.groups.updateNumbers(
-                                        groupDetails.id, groupDetails.members
-                                    );
-                                }
-                            }).then(function() { return groupDetails });
-                    } else {
-                        return Promise.resolve(groupDetails);
-                    }
-                })(groupDetails).then(function(groupDetails) {
-                    var ev = new Event('group');
-                    ev.groupDetails = groupDetails;
-                    eventTarget.dispatchEvent(ev);
-                }).catch(function(e) {
-                    console.log('error processing group', e);
-                });
+                var ev = new Event('group');
+                ev.groupDetails = groupDetails;
+                eventTarget.dispatchEvent(ev);
                 groupDetails = groupBuffer.next();
-                promises.push(promise);
             }
-            Promise.all(promises).then(function() {
-                eventTarget.dispatchEvent(new Event('groupsync'));
-            });
+            eventTarget.dispatchEvent(new Event('groupsync'));
         });
     },
     handleBlocked: function(blocked) {
@@ -430,38 +405,27 @@ MessageReceiver.prototype.extend({
                 }
             }
 
-            promises.push(textsecure.storage.groups.getNumbers(decrypted.group.id).then(function(existingGroup) {
-                if (existingGroup === undefined) {
-                    return textsecure.storage.groups.createNewGroup(decrypted.group.members, decrypted.group.id);
+            switch(decrypted.group.type) {
+            case textsecure.protobuf.GroupContext.Type.UPDATE:
+                decrypted.body = null;
+                decrypted.attachments = [];
+
+                break;
+            case textsecure.protobuf.GroupContext.Type.QUIT:
+                decrypted.body = null;
+                decrypted.attachments = [];
+                if (source === this.number) {
                 } else {
-                    switch(decrypted.group.type) {
-                    case textsecure.protobuf.GroupContext.Type.UPDATE:
-                        decrypted.body = null;
-                        decrypted.attachments = [];
-                        return textsecure.storage.groups.updateNumbers(
-                            decrypted.group.id, decrypted.group.members
-                        );
-
-                        break;
-                    case textsecure.protobuf.GroupContext.Type.QUIT:
-                        decrypted.body = null;
-                        decrypted.attachments = [];
-                        if (source === this.number) {
-                            return textsecure.storage.groups.deleteGroup(decrypted.group.id);
-                        } else {
-                            return textsecure.storage.groups.removeNumber(decrypted.group.id, source);
-                        }
-                    case textsecure.protobuf.GroupContext.Type.DELIVER:
-                        decrypted.group.name = null;
-                        decrypted.group.members = [];
-                        decrypted.group.avatar = null;
-
-                        break;
-                    default:
-                        throw new Error("Unknown group message type");
-                    }
                 }
-            }.bind(this)));
+            case textsecure.protobuf.GroupContext.Type.DELIVER:
+                decrypted.group.name = null;
+                decrypted.group.members = [];
+                decrypted.group.avatar = null;
+
+                break;
+            default:
+                throw new Error("Unknown group message type");
+            }
         }
 
         for (var i in decrypted.attachments) {
