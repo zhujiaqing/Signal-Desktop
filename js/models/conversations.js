@@ -320,7 +320,29 @@
 
     fetchMessages: function() {
         if (!this.id) { return false; }
-        return this.messageCollection.fetchConversation(this.id, null, this.get('unreadCount'));
+        var firstUnreadTimestamp;
+        return this.fetchNextUnreadMessage().then(function(message) {
+            if (message) {
+                firstUnreadTimestamp = message.get('received_at') :
+            }
+            return this.messageCollection.fetchConversation(this.id, null, firstUnreadTimestamp);
+        });
+    },
+    fetchNextUnreadMessage: function(conversationId) {
+        var collection = new Whisper.MessageCollection();
+        var options = {
+            limit: 1,
+            index: {
+                // 'next_unread' index on [conversationId, received_at, unread]
+                name  : 'next_unread',
+                lower : [conversationId]
+            }
+        };
+        return new Promise(function(resolve) {
+            collection.fetch(options).then(resolve);
+        }).then(function() {
+            return collection.at(0);
+        });
     },
 
     fetchContacts: function(options) {

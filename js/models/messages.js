@@ -524,22 +524,9 @@
             }.bind(this));
         },
 
-        getLoadedUnreadCount: function() {
-            return this.models.reduce(function(total, model) {
-                var count = model.get('unread');
-                if (count === undefined) {
-                    count = 0;
-                }
-                return total + count;
-            }, 0);
-        },
-
-        fetchConversation: function(conversationId, limit, unreadCount) {
+        fetchConversation: function(conversationId, limit, firstUnreadTimestamp) {
             if (typeof limit !== 'number') {
                 limit = 100;
-            }
-            if (typeof unreadCount !== 'number') {
-                unreadCount = 0;
             }
             return new Promise(function(resolve) {
                 var upper;
@@ -562,9 +549,8 @@
                 };
                 this.fetch(options).then(resolve);
             }.bind(this)).then(function() {
-                var loadedUnread = this.getLoadedUnreadCount();
-                if (loadedUnread < unreadCount) {
-                    return this.fetchConversation(conversationId, limit, unreadCount);
+                if (firstUnreadTimestamp && this.at(0).get('received_at') > firstUnreadTimestamp) {
+                    return this.fetchConversation(conversationId, limit, firstUnreadTimestamp);
                 }
             }.bind(this));
         },

@@ -217,6 +217,16 @@
                 });
                 next();
             }
+        },
+        {
+            version: "13.0",
+            migrate: function(transaction, next) {
+                console.log('migration 13.0');
+                console.log('adding an index for oldest unread messages');
+                var messages = transaction.objectStore('messages');
+                messages.createIndex('next_unread', ['conversationId', 'received_at', 'unread'], { unique: false });
+                next();
+            }
         }
     ];
 }());
