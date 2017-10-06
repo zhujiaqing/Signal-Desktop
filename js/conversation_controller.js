@@ -117,7 +117,7 @@
                 var deferred = conversation.save();
 
                 if (!deferred) {
-                    console.log('Conversation save failed! ', id, type);
+                    console.log('Conversation save failed! ', id, type, conversation.validate());
                     return reject(new Error('getOrCreate: Conversation save failed'));
                 }
 
