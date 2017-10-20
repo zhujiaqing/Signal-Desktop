@@ -228,21 +228,39 @@ MessageSender.prototype = {
 
     sendMessage: function(attrs) {
         var message = new Message(attrs);
-        return this.uploadMedia(message).then(function() {
-            return new Promise(function(resolve, reject) {
-                this.sendMessageProto(
-                    message.timestamp,
-                    message.recipients,
-                    message.toProto(),
-                    function(res) {
-                        res.dataMessage = message.toArrayBuffer();
-                        if (res.errors.length > 0) {
-                            reject(res);
-                        } else {
-                            resolve(res);
-                        }
+        var uploadPromise;
+        return new Promise(function(resolve, reject) {
+            var rejections = textsecure.storage.get('signedKeyRotationRejected', 0);
+            if (rejections > 5) {
+                throw new textsecure.SignedPreKeyRotationError(numbers, message.toArrayBuffer(), message.timestamp);
+            }
+
+            var outgoing = new OutgoingMessage(
+              this.server,
+              message.timestamp,
+              message.recipients,
+              message.toProto(),
+              false,
+              function(res) {
+                  res.dataMessage = message.toArrayBuffer();
+                  if (res.errors.length > 0) {
+                      reject(res);
+                  } else {
+                      resolve(res);
+                  }
+              }
+            );
+
+            message.recipients.forEach(function(number) {
+                this.queueJobForNumber(number, function() {
+                    if (!uploadPromise) {
+                      uploadPromise = this.uploadMedia(message);
                     }
-                );
+                    return uploadPromise.then(function() {
+                      outgoing.message.dataMessage.attachments = message.attachmentPointers;
+                      return outgoing.sendToNumber(number);
+                    }).catch(reject);
+                }.bind(this));
             }.bind(this));
         }.bind(this));
     },
