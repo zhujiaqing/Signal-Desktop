@@ -1,4 +1,5 @@
-package signalservice;
+// package signalservice;
+package textsecure;
 
 option java_package = "org.whispersystems.signalservice.internal.push";
 option java_outer_classname = "SignalServiceProtos";
