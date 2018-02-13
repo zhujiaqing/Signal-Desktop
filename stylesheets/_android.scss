@@ -22,7 +22,7 @@
     min-height: 10px;
   }
   .bubble {
-    padding: 9px 12px;
+    padding: $android-bubble-padding-vertical $android-bubble-padding-horizontal;
     border-radius: $border-radius;
     box-shadow: 0 3px 3px -4px black;
   }
