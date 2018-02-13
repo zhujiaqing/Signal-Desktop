@@ -282,6 +282,13 @@
           </div>
           <div class='attachments'></div>
           <p class='content' dir='auto'>
+            {{ #quote }}
+            <div class='quote {{ avatarColor }}'>
+              <div class='author'>{{ quote.authorName }}</div>
+              <div class='text'>{{ quote.text }}</div>
+            </div>
+            {{ /quote }}
+
             {{ #message }}<span class='body'>{{ message }}</span>{{ /message }}
           </p>
           <div class='meta'>

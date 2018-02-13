@@ -346,6 +346,11 @@
         },
         render: function() {
             var contact = this.model.isIncoming() ? this.model.getContact() : null;
+
+            const quote = this.model.get('quote');
+            const conversation = this.model.getConversation();
+            const avatar = conversation ? conversation.getAvatar() : null
+
             this.$el.html(
                 Mustache.render(_.result(this, 'template', ''), {
                     message: this.model.get('body'),
@@ -353,6 +358,13 @@
                     sender: (contact && contact.getTitle()) || '',
                     avatar: (contact && contact.getAvatar()),
                     profileName: (contact && contact.getProfileName()),
+                    quote: quote ? {
+                        authorName: conversation ?
+                            conversation.get('profileName') :
+                            quote.author,
+                        text: quote.text,
+                        authorColor: avatar ? avatar.color : null,
+                    } : null,
                 }, this.render_partials())
             );
             this.timeStampView.setElement(this.$('.timestamp'));
