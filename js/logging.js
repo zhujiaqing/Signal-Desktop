@@ -2,12 +2,10 @@ const electron = require('electron');
 const bunyan = require('bunyan');
 const _ = require('lodash');
 
-const Errors = require('./modules/types/errors');
+const Privacy = require('./modules/privacy');
 
 
 const ipc = electron.ipcRenderer;
-const PHONE_REGEX = /\+\d{7,12}(\d{3})/g;
-const GROUP_REGEX = /(group\()([^)]+)(\))/g;
 
 // Default Bunyan levels: https://github.com/trentm/node-bunyan#levels
 // To make it easier to visually scan logs, we make all levels the same length
@@ -21,19 +19,7 @@ const LEVELS = {
   10: 'trace',
 };
 
-
 // Backwards-compatible logging, simple strings and no level (defaulted to INFO)
-
-function redactPhone(text) {
-  return text.replace(PHONE_REGEX, "+[REDACTED]$1");
-}
-
-function redactGroup(text) {
-  return text.replace(GROUP_REGEX, function(match, before, id, after) {
-    return before + '[REDACTED]' + id.slice(-3) + after;
-  });
-}
-
 function now() {
   const date = new Date();
   return date.toJSON();
@@ -59,8 +45,8 @@ function log() {
     return item;
   });
 
-  const toSend = redactAll(str.join(' '));
-  ipc.send('log-info', toSend);
+  const logText = Privacy.redactAll(str.join(' '));
+  ipc.send('log-info', logText);
 }
 
 if (window.console) {
@@ -94,11 +80,7 @@ function formatLine(entry) {
 }
 
 function format(entries) {
-  return redactAll(entries.map(formatLine).join('\n')));
-}
-
-function redactAll(string) {
-  return Errors.redactSensitivePaths(redactGroup(redactPhone(string)));
+  return Privacy.redactAll(entries.map(formatLine).join('\n'));
 }
 
 function fetch() {
